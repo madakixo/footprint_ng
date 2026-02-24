@@ -68,6 +68,33 @@ data class NostrFilter(
         }
         
         /**
+         * Create filter for Nigeria admin level scoped text notes
+         */
+        fun nigeriaNotes(
+            state: String? = null,
+            region: String? = null,
+            lga: String? = null,
+            ward: String? = null,
+            constituency: String? = null,
+            since: Long? = null,
+            limit: Int = 200
+        ): NostrFilter {
+            val tags = mutableMapOf<String, List<String>>()
+            state?.let { tags["ng_state"] = listOf(it) }
+            region?.let { tags["ng_region"] = listOf(it) }
+            lga?.let { tags["ng_lga"] = listOf(it) }
+            ward?.let { tags["ng_ward"] = listOf(it) }
+            constituency?.let { tags["ng_constituency"] = listOf(it) }
+
+            return NostrFilter(
+                kinds = listOf(NostrKind.TEXT_NOTE),
+                since = since?.let { (it / 1000).toInt() },
+                tagFilters = tags,
+                limit = limit
+            )
+        }
+
+        /**
          * Create filter for specific event IDs
          */
         fun forEvents(ids: List<String>): NostrFilter {

@@ -557,6 +557,20 @@ private fun ChatDialogs(
         )
     }
 
+    val showNigeriaDashboard by viewModel.showNigeriaDashboard.collectAsStateWithLifecycle()
+    val showProfilingSheet by viewModel.showProfilingSheet.collectAsStateWithLifecycle()
+
+    NigeriaDashboardSheet(
+        isPresented = showNigeriaDashboard,
+        onDismiss = viewModel::hideNigeriaDashboard,
+        viewModel = viewModel
+    )
+
+    ProfilingSheet(
+        isPresented = showProfilingSheet,
+        onDismiss = viewModel::hideProfilingSheet
+    )
+
     if (showVerificationSheet) {
         VerificationSheet(
             isPresented = showVerificationSheet,

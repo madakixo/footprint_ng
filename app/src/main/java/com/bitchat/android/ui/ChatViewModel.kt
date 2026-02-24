@@ -1078,6 +1078,19 @@ class ChatViewModel(
 
     // MARK: - Navigation Management
     
+    // Nigeria Dashboard states
+    private val _showNigeriaDashboard = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val showNigeriaDashboard: kotlinx.coroutines.flow.StateFlow<Boolean> = _showNigeriaDashboard.asStateFlow()
+
+    private val _showProfilingSheet = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val showProfilingSheet: kotlinx.coroutines.flow.StateFlow<Boolean> = _showProfilingSheet.asStateFlow()
+
+    fun showNigeriaDashboard() { _showNigeriaDashboard.value = true }
+    fun hideNigeriaDashboard() { _showNigeriaDashboard.value = false }
+
+    fun showProfilingSheet() { _showProfilingSheet.value = true }
+    fun hideProfilingSheet() { _showProfilingSheet.value = false }
+
     fun showAppInfo() {
         state.setShowAppInfo(true)
     }
