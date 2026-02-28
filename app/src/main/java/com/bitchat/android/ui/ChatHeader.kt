@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -346,6 +347,7 @@ private fun MainHeader(
 
     // Bookmarks store for current geohash toggle (iOS parity)
     val context = androidx.compose.ui.platform.LocalContext.current
+    val roleManager = remember { com.bitchat.android.identity.RoleManager(context) }
     val bookmarksStore = remember { com.bitchat.android.geohash.GeohashBookmarksStore.getInstance(context) }
     val bookmarks by bookmarksStore.bookmarks.collectAsStateWithLifecycle()
 
@@ -423,6 +425,20 @@ private fun MainHeader(
                             modifier = Modifier.size(16.dp)
                         )
                     }
+                }
+            }
+
+            // Super Admin Dashboard
+            if (roleManager.isSuperAdmin()) {
+                IconButton(
+                    onClick = { viewModel.showSuperAdminDashboard() },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Analytics,
+                        contentDescription = "Super Admin Dashboard",
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
                 }
             }
 

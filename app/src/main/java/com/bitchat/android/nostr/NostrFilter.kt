@@ -1,4 +1,5 @@
 package com.bitchat.android.nostr
+import com.bitchat.android.location.NigeriaLocation
 
 import com.google.gson.*
 import com.google.gson.annotations.SerializedName
@@ -67,6 +68,31 @@ data class NostrFilter(
             )
         }
         
+        /**
+         * Create a batched filter for multiple admin locations
+         */
+        fun batchedNigeriaNotes(
+            locations: List<NigeriaLocation>,
+            since: Long? = null,
+            limit: Int = 500
+        ): NostrFilter {
+            val states = locations.map { it.state }.distinct()
+            val lgas = locations.map { it.lga }.distinct()
+            val wards = locations.map { it.ward }.distinct()
+
+            val tags = mutableMapOf<String, List<String>>()
+            tags["ng_state"] = states
+            tags["ng_lga"] = lgas
+            tags["ng_ward"] = wards
+
+            return NostrFilter(
+                kinds = listOf(NostrKind.TEXT_NOTE),
+                since = since?.let { (it / 1000).toInt() },
+                tagFilters = tags,
+                limit = limit
+            )
+        }
+
         /**
          * Create filter for Nigeria admin level scoped text notes
          */

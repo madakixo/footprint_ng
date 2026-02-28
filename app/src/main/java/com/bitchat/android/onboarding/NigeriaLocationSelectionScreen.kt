@@ -8,14 +8,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.gson.Gson
 import com.bitchat.android.location.NigeriaLocation
-import com.bitchat.android.R
+import com.bitchat.android.profiling.AppDatabase
+import kotlinx.coroutines.launch
 
 @Composable
 fun NigeriaLocationSelectionScreen(
@@ -23,7 +22,14 @@ fun NigeriaLocationSelectionScreen(
     onLocationSelected: (NigeriaLocation) -> Unit
 ) {
     val context = LocalContext.current
-    val nigeriaData = remember { loadNigeriaData(context) }
+    val coroutineScope = rememberCoroutineScope()
+    val adminDao = remember { AppDatabase.getDatabase(context).adminDao() }
+
+    var states by remember { mutableStateOf(emptyList<String>()) }
+    var regions by remember { mutableStateOf(emptyList<String>()) }
+    var lgas by remember { mutableStateOf(emptyList<String>()) }
+    var wards by remember { mutableStateOf(emptyList<String>()) }
+    var constituencies by remember { mutableStateOf(emptyList<String>()) }
 
     var selectedState by remember { mutableStateOf("") }
     var selectedRegion by remember { mutableStateOf("") }
@@ -31,11 +37,38 @@ fun NigeriaLocationSelectionScreen(
     var selectedWard by remember { mutableStateOf("") }
     var selectedConstituency by remember { mutableStateOf("") }
 
-    val states = nigeriaData.states.map { it.name }
-    val regions = nigeriaData.states.find { it.name == selectedState }?.regions?.map { it.name } ?: emptyList()
-    val lgas = nigeriaData.states.find { it.name == selectedState }?.regions?.find { it.name == selectedRegion }?.lgas?.map { it.name } ?: emptyList()
-    val wards = nigeriaData.states.find { it.name == selectedState }?.regions?.find { it.name == selectedRegion }?.lgas?.find { it.name == selectedLga }?.wards?.map { it.name } ?: emptyList()
-    val constituencies = nigeriaData.states.find { it.name == selectedState }?.regions?.find { it.name == selectedRegion }?.lgas?.find { it.name == selectedLga }?.wards?.find { it.name == selectedWard }?.constituencies ?: emptyList()
+    var stateSearch by remember { mutableStateOf("") }
+    var regionSearch by remember { mutableStateOf("") }
+    var lgaSearch by remember { mutableStateOf("") }
+    var wardSearch by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        states = adminDao.getAllStates().map { it.name }
+    }
+
+    LaunchedEffect(selectedState) {
+        if (selectedState.isNotEmpty()) {
+            regions = adminDao.getRegionsForState(selectedState).map { it.name }
+        }
+    }
+
+    LaunchedEffect(selectedState, selectedRegion) {
+        if (selectedRegion.isNotEmpty()) {
+            lgas = adminDao.getLgasForRegion(selectedState, selectedRegion).map { it.name }
+        }
+    }
+
+    LaunchedEffect(selectedState, selectedLga) {
+        if (selectedLga.isNotEmpty()) {
+            wards = adminDao.getWardsForLga(selectedState, selectedLga).map { it.name }
+        }
+    }
+
+    LaunchedEffect(selectedState, selectedWard) {
+        if (selectedWard.isNotEmpty()) {
+            constituencies = adminDao.getConstituenciesForWard(selectedState, selectedWard).map { it.name }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -53,20 +86,33 @@ fun NigeriaLocationSelectionScreen(
             color = MaterialTheme.colorScheme.primary
         )
 
-        Text(
-            text = "Select your administrative area in Nigeria to continue.",
-            fontSize = 14.sp,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        DropdownSelection("State", selectedState, states.filter { it.contains(stateSearch, ignoreCase = true) }, stateSearch, { stateSearch = it }) {
+            selectedState = it; selectedRegion = ""; selectedLga = ""; selectedWard = ""; selectedConstituency = ""; stateSearch = ""
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        if (selectedState.isNotEmpty()) {
+            DropdownSelection("Region", selectedRegion, regions.filter { it.contains(regionSearch, ignoreCase = true) }, regionSearch, { regionSearch = it }) {
+                selectedRegion = it; selectedLga = ""; selectedWard = ""; selectedConstituency = ""; regionSearch = ""
+            }
+        }
 
-        DropdownSelection("State", selectedState, states) { selectedState = it; selectedRegion = ""; selectedLga = ""; selectedWard = ""; selectedConstituency = "" }
-        DropdownSelection("Region", selectedRegion, regions) { selectedRegion = it; selectedLga = ""; selectedWard = ""; selectedConstituency = "" }
-        DropdownSelection("LGA / District", selectedLga, lgas) { selectedLga = it; selectedWard = ""; selectedConstituency = "" }
-        DropdownSelection("Ward", selectedWard, wards) { selectedWard = it; selectedConstituency = "" }
-        DropdownSelection("Constituency", selectedConstituency, constituencies) { selectedConstituency = it }
+        if (selectedRegion.isNotEmpty()) {
+            DropdownSelection("LGA / District", selectedLga, lgas.filter { it.contains(lgaSearch, ignoreCase = true) }, lgaSearch, { lgaSearch = it }) {
+                selectedLga = it; selectedWard = ""; selectedConstituency = ""; lgaSearch = ""
+            }
+        }
+
+        if (selectedLga.isNotEmpty()) {
+            DropdownSelection("Ward", selectedWard, wards.filter { it.contains(wardSearch, ignoreCase = true) }, wardSearch, { wardSearch = it }) {
+                selectedWard = it; selectedConstituency = ""; wardSearch = ""
+            }
+        }
+
+        if (selectedWard.isNotEmpty()) {
+            DropdownSelection("Constituency", selectedConstituency, constituencies, "", {}) {
+                selectedConstituency = it
+            }
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -74,7 +120,7 @@ fun NigeriaLocationSelectionScreen(
             onClick = {
                 onLocationSelected(NigeriaLocation(selectedState, selectedRegion, selectedLga, selectedWard, selectedConstituency))
             },
-            enabled = selectedState.isNotEmpty() && selectedRegion.isNotEmpty() && selectedLga.isNotEmpty() && selectedWard.isNotEmpty() && selectedConstituency.isNotEmpty(),
+            enabled = selectedState.isNotEmpty() && selectedLga.isNotEmpty() && selectedWard.isNotEmpty(),
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium
         ) {
@@ -85,7 +131,14 @@ fun NigeriaLocationSelectionScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropdownSelection(label: String, selectedValue: String, options: List<String>, onSelected: (String) -> Unit) {
+fun DropdownSelection(
+    label: String,
+    selectedValue: String,
+    options: List<String>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onSelected: (String) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
@@ -107,6 +160,15 @@ fun DropdownSelection(label: String, selectedValue: String, options: List<String
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
+            if (options.size > 5) {
+                TextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    placeholder = { Text("Search...", fontSize = 12.sp) },
+                    singleLine = true
+                )
+            }
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option, fontFamily = FontFamily.Monospace) },
@@ -118,11 +180,6 @@ fun DropdownSelection(label: String, selectedValue: String, options: List<String
             }
         }
     }
-}
-
-private fun loadNigeriaData(context: android.content.Context): NigeriaData {
-    val json = context.assets.open("ng.json").bufferedReader().use { it.readText() }
-    return Gson().fromJson(json, NigeriaData::class.java)
 }
 
 data class NigeriaData(val states: List<StateData>)

@@ -92,6 +92,29 @@ object NostrProtocol {
     }
     
     /**
+     * Create a decentralized vouch event (kind 30007)
+     */
+    suspend fun createVouchEvent(
+        targetPubkey: String,
+        reason: String,
+        senderIdentity: NostrIdentity
+    ): NostrEvent = withContext(Dispatchers.Default) {
+        val tags = listOf(
+            listOf("p", targetPubkey),
+            listOf("reason", reason)
+        )
+
+        val event = NostrEvent(
+            pubkey = senderIdentity.publicKeyHex,
+            createdAt = (System.currentTimeMillis() / 1000).toInt(),
+            kind = 30007, // Custom kind for Vouching
+            tags = tags,
+            content = "Vouched for $targetPubkey: $reason"
+        )
+        return@withContext senderIdentity.signEvent(event)
+    }
+
+    /**
      * Create a decentralized alert (custom kind)
      */
     suspend fun createNigeriaAlert(

@@ -560,6 +560,14 @@ private fun ChatDialogs(
     val showNigeriaDashboard by viewModel.showNigeriaDashboard.collectAsStateWithLifecycle()
     val showProfilingSheet by viewModel.showProfilingSheet.collectAsStateWithLifecycle()
 
+    val showSuperAdminDashboard by viewModel.showSuperAdminDashboard.collectAsStateWithLifecycle()
+
+    com.bitchat.android.ui.SuperAdminDashboard(
+        isPresented = showSuperAdminDashboard,
+        onDismiss = viewModel::hideSuperAdminDashboard,
+        viewModel = viewModel
+    )
+
     NigeriaDashboardSheet(
         isPresented = showNigeriaDashboard,
         onDismiss = viewModel::hideNigeriaDashboard,

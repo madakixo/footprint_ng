@@ -212,7 +212,9 @@ class MeshForegroundService : Service() {
                         try {
                             fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
                                 if (location != null) {
-                                    locationHierarchyManager.recordMovement(location.latitude, location.longitude)
+                                    scope.launch {
+                                        locationHierarchyManager.recordMovement(location.latitude, location.longitude)
+                                    }
                                 }
                             }
                         } catch (e: SecurityException) {

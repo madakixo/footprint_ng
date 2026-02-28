@@ -714,6 +714,9 @@ class MainActivity : OrientationAwareActivity() {
                 
                 Log.d("MainActivity", "Permissions verified, initializing chat system")
                 
+                // Seed administrative database if needed
+                com.bitchat.android.location.AdminDataSeeder.seedIfNeeded(this@MainActivity)
+
                 // Initialize PoW preferences early in the initialization process
                 PoWPreferenceManager.init(this@MainActivity)
                 Log.d("MainActivity", "PoW preferences initialized")

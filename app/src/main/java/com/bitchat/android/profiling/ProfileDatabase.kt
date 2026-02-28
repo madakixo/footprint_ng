@@ -5,6 +5,7 @@ import androidx.room.*
 import androidx.annotation.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.bitchat.android.location.*
 import com.bitchat.android.location.NigeriaLocation
 
 class Converters {
@@ -39,10 +40,12 @@ interface ProfileDao {
     suspend fun deleteProfile(id: String)
 }
 
-@Database(entities = [ScoutedProfile::class, MergedDatabase::class], version = 1)
+@Database(entities = [ScoutedProfile::class, MergedDatabase::class, StateEntity::class, RegionEntity::class, LgaEntity::class, WardEntity::class, ConstituencyEntity::class, WardFtsEntity::class, LocationHistoryEntity::class], version = 3)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
+    abstract fun adminDao(): AdminDao
+    abstract fun locationDao(): LocationDao
 
     companion object {
         @Volatile
@@ -54,7 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "bitchat_nigeria_db"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }
@@ -65,7 +68,7 @@ abstract class AppDatabase : RoomDatabase() {
             return Room.inMemoryDatabaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java
-            ).allowMainThreadQueries().build()
+            ).allowMainThreadQueries().fallbackToDestructiveMigration().build()
         }
     }
 }
